@@ -57,46 +57,17 @@ const GetData = async (keyword, withPlaylist = false, limit = 0) => {
             .continuationCommand.token;
       } else if (content.itemSectionRenderer) {
         content.itemSectionRenderer.contents.forEach((item) => {
-          if (item.channelRenderer) {
-            let channelRenderer = item.channelRenderer;
-            items.push({
-              id: channelRenderer.channelId,
-              type: "channel",
-              thumbnail: channelRenderer.thumbnail,
-              title: channelRenderer.title.simpleText,
-            });
-          } else {
+          if (!item.channelRenderer) {
             let videoRender = item.videoRenderer;
-            let playListRender = item.playlistRenderer;
-
             if (videoRender && videoRender.videoId) {
               items.push(VideoRender(item));
-            }
-            if (withPlaylist) {
-              if (playListRender && playListRender.playlistId) {
-                items.push({
-                  id: playListRender.playlistId,
-                  type: "playlist",
-                  thumbnail: playListRender.thumbnails,
-                  title: playListRender.title.simpleText,
-                  length: playListRender.videoCount,
-                  videos: playListRender.videos,
-                  videoCount: playListRender.videoCount,
-                  isLive: false,
-                });
-              }
             }
           }
         });
       }
     });
-    const apiToken = await page.apiToken;
-    const context = await page.context;
-    const nextPageContext = await { context: context, continuation: contToken };
-    const itemsResult = limit != 0 ? items.slice(0, limit) : items;
     return await Promise.resolve({
-      items: itemsResult,
-      nextPage: { nextPageToken: apiToken, nextPageContext: nextPageContext },
+      items: items.filter((el) => !el.isLive),
     });
   } catch (ex) {
     await console.error(ex);
@@ -289,26 +260,10 @@ const VideoRender = (json) => {
         });
       }
       const id = videoRenderer.videoId;
-      const thumbnail = videoRenderer.thumbnail;
       const title = videoRenderer.title.runs[0].text;
-      const shortBylineText = videoRenderer.shortBylineText
-        ? videoRenderer.shortBylineText
-        : "";
-      const lengthText = videoRenderer.lengthText
-        ? videoRenderer.lengthText
-        : "";
-      const channelTitle =
-        videoRenderer.ownerText && videoRenderer.ownerText.runs
-          ? videoRenderer.ownerText.runs[0].text
-          : "";
       return {
         id,
-        type: "video",
-        thumbnail,
         title,
-        channelTitle,
-        shortBylineText,
-        length: lengthText,
         isLive,
       };
     } else {
