@@ -67,7 +67,7 @@ const GetData = async (keyword, withPlaylist = false, limit = 0) => {
       }
     });
     return await Promise.resolve({
-      items: items.filter((el) => !el.isLive),
+      items: items.filter((el) => !!el.id),
     });
   } catch (ex) {
     await console.error(ex);
@@ -261,11 +261,14 @@ const VideoRender = (json) => {
       }
       const id = videoRenderer.videoId;
       const title = videoRenderer.title.runs[0].text;
-      return {
-        id,
-        title,
-        isLive,
-      };
+      if (!isLive) {
+        return {
+          id,
+          title,
+        };
+      } else {
+        return {};
+      }
     } else {
       return {};
     }
